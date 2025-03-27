@@ -2,16 +2,14 @@
   "llmProviders": [
     {
       "id": "philosopher",
-      "provider": "openai",
-      "model": "gpt-4",
-      "apiKey": "YOUR_OPENAI_API_KEY",
+      "provider": "anthropic",
+      "model": "claude-3-7-sonnet-20250219",
       "characterDefinition": "philosopher.json"
     },
     {
       "id": "scientist",
       "provider": "anthropic",
-      "model": "claude-2",
-      "apiKey": "YOUR_ANTHROPIC_API_KEY",
+      "model": "claude-3-7-sonnet-20250219",
       "characterDefinition": "scientist.json"
     }
   ],
@@ -19,7 +17,7 @@
     "topic": "The ethical implications of artificial intelligence",
     "firstSpeaker": "philosopher",
     "numTurns": 6,
-    "delayBetweenTurns": 2000
+    "delayBetweenTurns": 5000
   },
   "output": {
     "saveToFile": true,

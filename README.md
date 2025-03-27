@@ -27,9 +27,12 @@ A modular Node.js system that enables two LLMs from different providers to have 
    ```
 
 3. Configure your API keys:
-   - Open `config/config.json`
-   - Replace `YOUR_OPENAI_API_KEY` with your actual OpenAI API key
-   - Replace `YOUR_ANTHROPIC_API_KEY` with your actual Anthropic API key
+   - Copy `.env.example` to `.env`
+   - Open `.env` and add your API keys:
+     ```
+     OPENAI_API_KEY=your_openai_api_key_here
+     ANTHROPIC_API_KEY=your_anthropic_api_key_here
+     ```
 
 ## Usage
 
@@ -74,14 +77,12 @@ This will start an Express server on port 3000 (or the port specified in your co
       "id": "philosopher",
       "provider": "openai",
       "model": "gpt-4",
-      "apiKey": "YOUR_OPENAI_API_KEY",
       "characterDefinition": "philosopher.json"
     },
     {
       "id": "scientist",
       "provider": "anthropic",
       "model": "claude-2",
-      "apiKey": "YOUR_ANTHROPIC_API_KEY",
       "characterDefinition": "scientist.json"
     }
   ],
@@ -107,6 +108,30 @@ This will start an Express server on port 3000 (or the port specified in your co
     "fallbackProvider": "openai"
   }
 }
+```
+
+### Environment Variables (.env)
+
+The system uses environment variables for sensitive configuration like API keys. Create a `.env` file in the root directory with the following variables:
+
+```
+# LLM API Keys
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+
+# Output Configuration
+SAVE_TO_FILE=true
+OUTPUT_FILE_PATH=./output/conversation.json
+DISPLAY_IN_CONSOLE=true
+
+# Error Handling
+ERROR_STRATEGY=retry
+MAX_RETRIES=3
+INITIAL_DELAY=1000
 ```
 
 ### Character Definitions
@@ -161,6 +186,11 @@ const LLMProviderInterface = require('./provider-interface');
 class MyProvider extends LLMProviderInterface {
   constructor(config) {
     super(config);
+    // Use environment variables for API keys
+    this.apiKey = process.env.MY_PROVIDER_API_KEY;
+    if (!this.apiKey) {
+      throw new Error('MY_PROVIDER_API_KEY environment variable is not set');
+    }
     // Initialize your provider
   }
 

@@ -11,7 +11,10 @@ class OpenAIProvider extends LLMProviderInterface {
    */
   constructor(config) {
     super(config);
-    this.apiKey = config.apiKey;
+    this.apiKey = process.env.OPENAI_API_KEY;
+    if (!this.apiKey) {
+      throw new Error('OPENAI_API_KEY environment variable is not set');
+    }
     this.apiUrl = 'https://api.openai.com/v1/chat/completions';
     this.client = axios.create({
       headers: {

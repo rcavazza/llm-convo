@@ -11,7 +11,10 @@ class AnthropicProvider extends LLMProviderInterface {
    */
   constructor(config) {
     super(config);
-    this.apiKey = config.apiKey;
+    this.apiKey = process.env.ANTHROPIC_API_KEY;
+    if (!this.apiKey) {
+      throw new Error('ANTHROPIC_API_KEY environment variable is not set');
+    }
     this.apiUrl = 'https://api.anthropic.com/v1/messages';
     this.client = axios.create({
       headers: {
