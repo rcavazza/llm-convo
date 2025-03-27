@@ -1,0 +1,17 @@
+{
+  "id": "philosophical-debate",
+  "name": "Philosophical Debate",
+  "description": "A structured philosophical debate on a given topic",
+  "llmRoles": ["proposer", "critic"],
+  "structure": [
+    {"role": "proposer", "type": "opening", "instructions": "Present the main argument about {topic}"},
+    {"role": "critic", "type": "rebuttal", "instructions": "Challenge the main argument about {topic}"},
+    {"role": "proposer", "type": "defense", "instructions": "Defend your position on {topic}"},
+    {"role": "critic", "type": "counter", "instructions": "Provide a counter-argument about {topic}"},
+    {"role": "proposer", "type": "conclusion", "instructions": "Summarize your final position on {topic}"}
+  ],
+  "initialPrompts": {
+    "proposer": "You are presenting a philosophical argument about {topic}. Start by clearly stating your position.",
+    "critic": "You are critically examining arguments about {topic}. Look for logical fallacies and weak points."
+  }
+}

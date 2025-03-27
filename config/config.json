@@ -1,0 +1,43 @@
+{
+  "llmProviders": [
+    {
+      "id": "philosopher",
+      "provider": "openai",
+      "model": "gpt-4",
+      "apiKey": "YOUR_OPENAI_API_KEY",
+      "characterDefinition": "philosopher.json"
+    },
+    {
+      "id": "scientist",
+      "provider": "anthropic",
+      "model": "claude-2",
+      "apiKey": "YOUR_ANTHROPIC_API_KEY",
+      "characterDefinition": "scientist.json"
+    }
+  ],
+  "conversation": {
+    "topic": "The ethical implications of artificial intelligence",
+    "firstSpeaker": "philosopher",
+    "numTurns": 6,
+    "delayBetweenTurns": 2000
+  },
+  "output": {
+    "saveToFile": true,
+    "filePath": "./output/conversation.json",
+    "displayInConsole": true,
+    "api": {
+      "enabled": true,
+      "port": 3000
+    },
+    "web": {
+      "enabled": false,
+      "port": 8080
+    }
+  },
+  "errorHandling": {
+    "strategy": "retry",
+    "maxRetries": 3,
+    "initialDelay": 1000,
+    "fallbackProvider": "openai"
+  }
+}
