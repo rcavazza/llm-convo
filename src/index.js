@@ -9,6 +9,7 @@ dotenv.config();
 const ConfigurationManager = require('./config-manager');
 const ConversationManager = require('./conversation-manager');
 const OutputManager = require('./output-manager');
+const ConversationRepository = require('./conversation-repository');
 const ErrorHandler = require('./error-handler');
 const TemplateManager = require('./template-manager');
 const ExportManager = require('./export-manager');
@@ -27,6 +28,7 @@ class ConversationSystem {
     this.templatesDir = path.join(path.dirname(this.configPath), 'templates');
     this.conversationManager = null;
     this.outputManager = null;
+    this.conversationRepository = null;
     this.errorHandler = null;
     this.templateManager = null;
     this.exportManager = null;
@@ -49,6 +51,7 @@ class ConversationSystem {
       // Initialize components
       this.conversationManager = new ConversationManager(config, characterDefinitions);
       this.outputManager = new OutputManager(config.output);
+      this.conversationRepository = new ConversationRepository(this.outputManager);
       this.errorHandler = new ErrorHandler(config.errorHandling);
       this.templateManager = new TemplateManager(this.templatesDir);
       this.exportManager = new ExportManager();
@@ -104,7 +107,8 @@ class ConversationSystem {
       
       // Handle output
       if (config.output.saveToFile) {
-        await this.outputManager.saveToFile(conversation);
+        // Save to a unique file using the repository
+        await this.conversationRepository.saveConversation(conversation);
       }
       
       if (config.output.displayInConsole) {
@@ -148,8 +152,51 @@ class ConversationSystem {
     // Add endpoint to start a new conversation
     app.post('/conversations', async (req, res) => {
       try {
-        await this.startConversation();
+        await this.startConversation(req.body);
         res.json({ status: 'success', message: 'Conversation started' });
+      } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+      }
+    });
+    
+    // Add conversation repository endpoints
+    app.get('/conversations/list', async (req, res) => {
+      try {
+        const conversations = await this.conversationRepository.listConversations();
+        res.json(conversations);
+      } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+      }
+    });
+    
+    app.get('/conversations/search', async (req, res) => {
+      try {
+        const query = req.query.q || '';
+        const conversations = await this.conversationRepository.searchConversations(query);
+        res.json(conversations);
+      } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+      }
+    });
+    
+    app.get('/conversations/recent', async (req, res) => {
+      try {
+        const limit = parseInt(req.query.limit) || 10;
+        const conversations = await this.conversationRepository.getRecentConversations(limit);
+        res.json(conversations);
+      } catch (error) {
+        res.status(500).json({ status: 'error', message: error.message });
+      }
+    });
+    
+    app.delete('/conversations/:id', async (req, res) => {
+      try {
+        const success = await this.conversationRepository.deleteConversation(req.params.id);
+        if (success) {
+          res.json({ status: 'success', message: 'Conversation deleted' });
+        } else {
+          res.status(404).json({ status: 'error', message: 'Conversation not found' });
+        }
       } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
       }
@@ -178,7 +225,15 @@ class ConversationSystem {
     app.get('/conversations/export', async (req, res) => {
       try {
         const format = req.query.format || 'json';
-        const conversation = this.conversationManager.getConversationHistory();
+        let conversation;
+        
+        if (req.query.id) {
+          // Export a specific conversation
+          conversation = await this.conversationRepository.getConversation(req.query.id);
+        } else {
+          // Export the current conversation
+          conversation = this.conversationManager.getConversationHistory();
+        }
         
         if (req.query.download) {
           // Export to file and send as download

@@ -11,7 +11,9 @@ A modular Node.js system that enables two LLMs from different providers to have 
 - **Multiple Export Formats**: JSON, Markdown, HTML, Plain text
 - **Flexible Output Options**: Save to file, display in console, and API endpoint
 - **Configurable Error Handling**: Different strategies based on needs
-- **Web Interface**: For viewing and managing conversations (coming soon)
+- **Individual Conversation Files**: Each conversation is saved in a separate file for better organization
+- **Terminal UI**: Modern terminal-based interface for viewing and managing conversations
+- **Web Interface**: Cyberpunk-themed web UI with black/green/glitch aesthetic for viewing all conversations
 
 ## Installation
 
@@ -50,6 +52,40 @@ Or specify a custom configuration file:
 npm start -- path/to/your/config.json
 ```
 
+### Terminal UI
+
+Launch the terminal-based user interface:
+
+```
+node terminal-ui.js
+```
+
+This provides a modern terminal UI with the following features:
+- List all saved conversations
+- View conversation details
+- Export conversations in different formats
+- Search conversations
+- Delete conversations
+
+Navigate using arrow keys, Enter to select, and 'q' to quit.
+
+### Web Interface
+
+Start the web server:
+
+```
+node web/server.js
+```
+
+Access the web interface at http://localhost:8080 (or the port specified in your config).
+
+The web interface features:
+- Black/green/glitch cyberpunk theme
+- List of all conversations
+- Detailed view of each conversation
+- Start new conversations
+- Export conversations in different formats
+
 ### API Server
 
 Start the API server:
@@ -60,11 +96,13 @@ node api/server.js
 
 This will start an Express server on port 3000 (or the port specified in your config) with the following endpoints:
 
-- `GET /`: API information
-- `GET /conversations`: Get all conversations
-- `GET /conversations/current`: Get the current conversation
-- `POST /conversations`: Start a new conversation
-- `GET /conversations/:id/export?format=json|text|markdown`: Export a conversation
+- `GET /api/conversations`: Get all conversations
+- `GET /api/conversations/current`: Get the current conversation
+- `GET /api/conversations/:id`: Get a specific conversation
+- `POST /api/conversations`: Start a new conversation
+- `DELETE /api/conversations/:id`: Delete a conversation
+- `GET /api/conversations/search?q=query`: Search conversations
+- `GET /api/export/:id?format=json|text|markdown|html`: Export a conversation
 
 ## Configuration
 
@@ -75,14 +113,14 @@ This will start an Express server on port 3000 (or the port specified in your co
   "llmProviders": [
     {
       "id": "philosopher",
-      "provider": "openai",
-      "model": "gpt-4",
+      "provider": "anthropic",
+      "model": "claude-3-7-sonnet-20250219",
       "characterDefinition": "philosopher.json"
     },
     {
       "id": "scientist",
       "provider": "anthropic",
-      "model": "claude-2",
+      "model": "claude-3-7-sonnet-20250219",
       "characterDefinition": "scientist.json"
     }
   ],
@@ -90,15 +128,31 @@ This will start an Express server on port 3000 (or the port specified in your co
     "topic": "The ethical implications of artificial intelligence",
     "firstSpeaker": "philosopher",
     "numTurns": 6,
-    "delayBetweenTurns": 2000
+    "delayBetweenTurns": 5000
   },
   "output": {
     "saveToFile": true,
-    "filePath": "./output/conversation.json",
+    "directory": "./output/conversations",
+    "filenameFormat": "{timestamp}_{topic}",
     "displayInConsole": true,
     "api": {
       "enabled": true,
       "port": 3000
+    },
+    "web": {
+      "enabled": true,
+      "port": 8080
+    },
+    "terminal": {
+      "enabled": true,
+      "theme": "modern-dark",
+      "colors": {
+        "primary": "#36c5f0",
+        "secondary": "#2eb67d",
+        "accent": "#e01e5a",
+        "background": "#1a1d21",
+        "text": "#f2f3f5"
+      }
     }
   },
   "errorHandling": {
@@ -125,7 +179,7 @@ NODE_ENV=development
 
 # Output Configuration
 SAVE_TO_FILE=true
-OUTPUT_FILE_PATH=./output/conversation.json
+OUTPUT_DIRECTORY=./output/conversations
 DISPLAY_IN_CONSOLE=true
 
 # Error Handling

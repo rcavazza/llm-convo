@@ -29,12 +29,26 @@ async function initializeSystem() {
 }
 
 // API routes
-app.get('/api/conversations', (req, res) => {
-  res.json([system.getConversationHistory()]);
+app.get('/api/conversations', async (req, res) => {
+  try {
+    const conversations = await system.conversationRepository.listConversations();
+    res.json(conversations);
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
 });
 
 app.get('/api/conversations/current', (req, res) => {
   res.json(system.getConversationHistory());
+});
+
+app.get('/api/conversations/:id', async (req, res) => {
+  try {
+    const conversation = await system.conversationRepository.getConversation(req.params.id);
+    res.json(conversation);
+  } catch (error) {
+    res.status(404).json({ status: 'error', message: error.message });
+  }
 });
 
 app.post('/api/conversations', async (req, res) => {
@@ -42,6 +56,29 @@ app.post('/api/conversations', async (req, res) => {
     // Start a new conversation with custom config if provided
     await system.startConversation(req.body);
     res.json({ status: 'success', message: 'Conversation started successfully' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+app.delete('/api/conversations/:id', async (req, res) => {
+  try {
+    const success = await system.conversationRepository.deleteConversation(req.params.id);
+    if (success) {
+      res.json({ status: 'success', message: 'Conversation deleted' });
+    } else {
+      res.status(404).json({ status: 'error', message: 'Conversation not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+app.get('/api/conversations/search', async (req, res) => {
+  try {
+    const query = req.query.q || '';
+    const conversations = await system.conversationRepository.searchConversations(query);
+    res.json(conversations);
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
   }
@@ -56,10 +93,10 @@ app.get('/api/templates', async (req, res) => {
   }
 });
 
-app.get('/api/export', async (req, res) => {
+app.get('/api/export/:id', async (req, res) => {
   try {
     const format = req.query.format || 'json';
-    const conversation = system.getConversationHistory();
+    const conversation = await system.conversationRepository.getConversation(req.params.id);
     const content = system.exportManager.formatConversation(conversation, format);
     
     if (format === 'json') {
@@ -82,6 +119,16 @@ io.on('connection', (socket) => {
   
   socket.on('disconnect', () => {
     console.log('Client disconnected');
+  });
+  
+  // Emit event when a new conversation is saved
+  socket.on('requestConversations', async () => {
+    try {
+      const conversations = await system.conversationRepository.listConversations();
+      socket.emit('conversationsList', conversations);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+    }
   });
 });
 

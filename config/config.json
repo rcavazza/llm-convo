@@ -21,15 +21,27 @@
   },
   "output": {
     "saveToFile": true,
-    "filePath": "./output/conversation.json",
+    "directory": "./output/conversations",
+    "filenameFormat": "{timestamp}_{topic}",
     "displayInConsole": true,
     "api": {
       "enabled": true,
       "port": 3000
     },
     "web": {
-      "enabled": false,
+      "enabled": true,
       "port": 8080
+    },
+    "terminal": {
+      "enabled": true,
+      "theme": "modern-dark",
+      "colors": {
+        "primary": "#36c5f0",
+        "secondary": "#2eb67d",
+        "accent": "#e01e5a",
+        "background": "#1a1d21",
+        "text": "#f2f3f5"
+      }
     }
   },
   "errorHandling": {
