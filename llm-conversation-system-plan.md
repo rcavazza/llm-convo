@@ -110,32 +110,7 @@ classDiagram
     ConversationManager --> ConversationTurn
 ```
 
-### 4. Template Manager
-
-Handles loading and applying conversation templates.
-
-```mermaid
-classDiagram
-    class TemplateManager {
-        +loadTemplate(templatePath)
-        +applyTemplate(template, topic)
-        +saveTemplate(template, path)
-        +listTemplates()
-    }
-    
-    class ConversationTemplate {
-        +id
-        +name
-        +description
-        +llmRoles[]
-        +structure[]
-        +initialPrompts{}
-    }
-    
-    TemplateManager --> ConversationTemplate
-```
-
-### 5. Output Manager
+### 4. Output Manager
 
 Handles the different output methods: file, console, and API endpoint.
 
@@ -149,7 +124,7 @@ classDiagram
     }
 ```
 
-### 6. Export Manager
+### 5. Export Manager
 
 Handles exporting conversations in different formats.
 
@@ -166,7 +141,7 @@ classDiagram
     }
 ```
 
-### 7. Error Handler
+### 6. Error Handler
 
 Configurable error handling strategies for API communication issues.
 
@@ -180,7 +155,7 @@ classDiagram
     }
 ```
 
-### 8. Web Interface
+### 7. Web Interface
 
 A web interface for viewing and managing conversations.
 
@@ -190,9 +165,8 @@ graph TD
     A --> C[API Server]
     B --> D[Conversation List View]
     B --> E[Conversation Detail View]
-    B --> F[Configuration Editor]
-    B --> G[Template Manager]
-    B --> H[Export Options]
+    B --> F[Character Manager]
+    B --> G[Export Options]
 ```
 
 ## File Structure
@@ -205,42 +179,32 @@ llm-conversation-system/
 │   │   ├── philosopher.json
 │   │   ├── scientist.json
 │   │   └── ...
-│   ├── templates/                 # Conversation templates
-│   │   ├── debate.json
-│   │   ├── interview.json
-│   │   └── ...
 │   └── error-strategies/          # Error handling strategies
 │       ├── retry.js
 │       ├── fallback.js
 │       └── ...
 ├── src/
-│   ├── index.js                   # Entry point
+│   ├── index.js                   # Entry point / ConversationSystem class
 │   ├── config-manager.js          # Configuration manager
 │   ├── conversation-manager.js    # Conversation flow manager
-│   ├── template-manager.js        # Template manager
 │   ├── output-manager.js          # Output handling
 │   ├── export-manager.js          # Export functionality
 │   ├── error-handler.js           # Error handling
+│   ├── conversation-repository.js # Conversation persistence
 │   └── providers/                 # LLM providers
 │       ├── provider-interface.js  # Common interface
+│       ├── provider-factory.js    # Provider registry
+│       ├── copilot-provider.js    # GitHub Copilot implementation
 │       ├── openai-provider.js     # OpenAI implementation
-│       ├── anthropic-provider.js  # Anthropic implementation
-│       └── ...                    # Other providers
+│       └── anthropic-provider.js  # Anthropic implementation
 ├── output/                        # Saved conversations
-│   └── ...
-├── api/                           # API endpoint
-│   └── server.js                  # Express server
+│   └── conversations/
+├── api/                           # Standalone API server
+│   └── server.js
 ├── web/                           # Web interface
-│   ├── server.js                  # Web server
-│   ├── public/                    # Static assets
-│   └── src/                       # React components
-│       ├── App.js
-│       ├── components/
-│       │   ├── ConversationList.js
-│       │   ├── ConversationView.js
-│       │   ├── ConfigEditor.js
-│       │   └── ...
-│       └── ...
+│   ├── server.js                  # Express + Socket.IO server
+│   └── public/
+│       └── index.html             # Single-page web UI
 ├── package.json
 └── README.md
 ```
@@ -253,35 +217,32 @@ llm-conversation-system/
 {
   "llmProviders": [
     {
-      "id": "llm1",
-      "provider": "openai",
-      "model": "gpt-4",
-      "apiKey": "YOUR_API_KEY",
+      "id": "philosopher",
+      "provider": "copilot",
+      "model": "gpt-4.1",
       "characterDefinition": "philosopher.json"
     },
     {
-      "id": "llm2",
-      "provider": "anthropic",
-      "model": "claude-2",
-      "apiKey": "YOUR_API_KEY",
+      "id": "scientist",
+      "provider": "copilot",
+      "model": "gpt-4.1",
       "characterDefinition": "scientist.json"
     }
   ],
   "conversation": {
-    "topic": "The future of artificial intelligence",
-    "template": "philosophical-debate",  // Optional template to use
-    "firstSpeaker": "llm1",
-    "numTurns": 10,
-    "delayBetweenTurns": 2000  // Delay in milliseconds between API calls
+    "topic": "The ethical implications of artificial intelligence",
+    "firstSpeaker": "philosopher",
+    "numTurns": 6,
+    "delayBetweenTurns": 5000
   },
   "output": {
     "saveToFile": true,
-    "filePath": "./output/conversation.json",
+    "directory": "./output/conversations",
+    "filenameFormat": "{timestamp}_{topic}",
     "displayInConsole": true,
-    "exportFormat": "json",  // Default export format
     "api": {
       "enabled": true,
-      "port": 3000
+      "port": 3001
     },
     "web": {
       "enabled": true,
@@ -292,7 +253,7 @@ llm-conversation-system/
     "strategy": "retry",
     "maxRetries": 3,
     "initialDelay": 1000,
-    "fallbackProvider": "openai"
+    "fallbackProvider": "copilot"
   }
 }
 ```
@@ -302,35 +263,14 @@ llm-conversation-system/
 ```json
 {
   "name": "Philosopher",
-  "systemPrompt": "You are a thoughtful philosopher with a deep understanding of ethics, metaphysics, and epistemology. You analyze topics from first principles and consider their philosophical implications. You often reference philosophers like Kant, Aristotle, and Wittgenstein.",
+  "systemPrompt": "You are a thoughtful philosopher with a deep understanding of ethics, metaphysics, and epistemology...",
   "parameters": {
-    "temperature": 0.7,
-    "maxTokens": 500
+    "reasoningEffort": "high"
   }
 }
 ```
 
-### Conversation Template (e.g., debate.json)
-
-```json
-{
-  "id": "philosophical-debate",
-  "name": "Philosophical Debate",
-  "description": "A structured philosophical debate on a given topic",
-  "llmRoles": ["proposer", "critic"],
-  "structure": [
-    {"role": "proposer", "type": "opening", "instructions": "Present the main argument about {topic}"},
-    {"role": "critic", "type": "rebuttal", "instructions": "Challenge the main argument about {topic}"},
-    {"role": "proposer", "type": "defense", "instructions": "Defend your position on {topic}"},
-    {"role": "critic", "type": "counter", "instructions": "Provide a counter-argument about {topic}"},
-    {"role": "proposer", "type": "conclusion", "instructions": "Summarize your final position on {topic}"}
-  ],
-  "initialPrompts": {
-    "proposer": "You are presenting a philosophical argument about {topic}. Start by clearly stating your position.",
-    "critic": "You are critically examining arguments about {topic}. Look for logical fallacies and weak points."
-  }
-}
-```
+The `parameters.reasoningEffort` field accepts `"low"`, `"medium"`, or `"high"` and is supported by the GitHub Copilot provider. Other parameters (e.g. `temperature`, `maxTokens`) are not supported by the Copilot provider and should be omitted.
 
 ## Implementation Plan
 
@@ -341,14 +281,12 @@ llm-conversation-system/
 3. Create the LLM Provider Interface and basic implementations for OpenAI and Anthropic
 4. Implement basic error handling
 
-### Phase 2: Conversation Logic and Templates
+### Phase 2: Conversation Logic
 
 1. Implement the Conversation Manager
-2. Create the Template Manager
-3. Implement template loading and application
-4. Create the prompt generation logic
-5. Implement the turn-based conversation flow
-6. Add conversation history tracking
+2. Create the prompt generation logic
+3. Implement the turn-based conversation flow
+4. Add conversation history tracking
 
 ### Phase 3: Output and Export Handling
 
@@ -361,13 +299,11 @@ llm-conversation-system/
 
 ### Phase 4: Web Interface
 
-1. Set up the Express.js web server
-2. Create the React frontend structure
-3. Implement the conversation list and detail views
-4. Add the configuration editor
-5. Implement the template manager UI
-6. Add real-time updates with Socket.IO
-7. Implement export functionality in the UI
+1. Set up the Express.js web server with Socket.IO
+2. Implement the conversation list and detail views
+3. Add character CRUD management
+4. Add real-time updates with Socket.IO
+5. Implement export functionality in the UI
 
 ### Phase 5: Error Handling and Testing
 
@@ -411,33 +347,31 @@ The system will expose a RESTful API with the following endpoints:
 
 ```
 // Conversation endpoints
-GET /conversations - List all saved conversations
-GET /conversations/:id - Get a specific conversation
-POST /conversations - Start a new conversation with provided configuration
-GET /conversations/current - Get the currently running conversation
+GET /api/conversations - List all saved conversations
+GET /api/conversations/:id - Get a specific conversation
+POST /api/conversations - Start a new conversation with provided configuration
+GET /api/conversations/current - Get the currently running conversation
+DELETE /api/conversations/:id - Delete a conversation
+GET /api/conversations/search?q=query - Search conversations
 
-// Template endpoints
-GET /templates - List all available templates
-GET /templates/:id - Get a specific template
-POST /templates - Create a new template
-PUT /templates/:id - Update a template
-DELETE /templates/:id - Delete a template
+// Character endpoints
+GET /api/characters - List all character definitions
+GET /api/characters/:id - Get a specific character
+POST /api/characters - Create a new character
+PUT /api/characters/:id - Update a character
+DELETE /api/characters/:id - Delete a character
 
 // Export endpoints
-GET /conversations/:id/export - Export a conversation in the specified format
+GET /api/export/:id?format=json|text|markdown|html - Export a conversation
 ```
 
 ## Web Interface Features
 
-1. **Dashboard**: Overview of recent conversations and system status
-2. **Conversation List**: Browse and search all conversations
-3. **Conversation Viewer**: Read conversations with syntax highlighting and metadata
-4. **Live Viewer**: Watch conversations happen in real-time
-5. **Configuration Editor**: Edit the system configuration
-6. **Template Manager**: Create and edit conversation templates
-7. **Character Editor**: Create and edit LLM character definitions
-8. **Export Panel**: Export conversations in different formats
-9. **Settings**: Configure the web interface and system defaults
+1. **Conversation List**: Browse and search all conversations
+2. **Conversation Viewer**: Read conversations with metadata
+3. **New Conversation**: Start a conversation with custom topic, turns, delay, and character selection
+4. **Character Manager**: Create, edit, and delete LLM character definitions (name, system prompt, reasoning effort)
+5. **Export Panel**: Export conversations in JSON, Markdown, HTML, or plain text formats
 
 ## Error Handling Strategies
 

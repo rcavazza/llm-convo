@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const http = require('http');
 const socketIo = require('socket.io');
+const fs = require('fs-extra');
 const { ConversationSystem } = require('../src/index');
 
 // Create Express app
@@ -16,6 +17,7 @@ app.use(express.json());
 // Create conversation system
 const configPath = path.join(__dirname, '../config/config.json');
 const system = new ConversationSystem(configPath);
+const charactersDir = path.join(__dirname, '../config/characters');
 
 // Initialize the system
 async function initializeSystem() {
@@ -84,10 +86,60 @@ app.get('/api/conversations/search', async (req, res) => {
   }
 });
 
-app.get('/api/templates', async (req, res) => {
+// Characters CRUD
+app.get('/api/characters', async (req, res) => {
   try {
-    const templates = await system.templateManager.listTemplates();
-    res.json(templates);
+    const files = await fs.readdir(charactersDir);
+    const characters = [];
+    for (const file of files.filter(f => f.endsWith('.json'))) {
+      const id = path.basename(file, '.json');
+      const data = JSON.parse(await fs.readFile(path.join(charactersDir, file), 'utf8'));
+      characters.push({ id, ...data });
+    }
+    res.json(characters);
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+app.get('/api/characters/:id', async (req, res) => {
+  try {
+    const filePath = path.join(charactersDir, `${req.params.id}.json`);
+    const data = JSON.parse(await fs.readFile(filePath, 'utf8'));
+    res.json({ id: req.params.id, ...data });
+  } catch (error) {
+    res.status(404).json({ status: 'error', message: error.message });
+  }
+});
+
+app.post('/api/characters', async (req, res) => {
+  try {
+    const { id, ...character } = req.body;
+    if (!id) return res.status(400).json({ status: 'error', message: 'Character ID is required' });
+    const filePath = path.join(charactersDir, `${id}.json`);
+    await fs.writeFile(filePath, JSON.stringify(character, null, 2), 'utf8');
+    res.json({ status: 'success', message: 'Character created' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+app.put('/api/characters/:id', async (req, res) => {
+  try {
+    const { id: _id, ...character } = req.body;
+    const filePath = path.join(charactersDir, `${req.params.id}.json`);
+    await fs.writeFile(filePath, JSON.stringify(character, null, 2), 'utf8');
+    res.json({ status: 'success', message: 'Character updated' });
+  } catch (error) {
+    res.status(500).json({ status: 'error', message: error.message });
+  }
+});
+
+app.delete('/api/characters/:id', async (req, res) => {
+  try {
+    const filePath = path.join(charactersDir, `${req.params.id}.json`);
+    await fs.remove(filePath);
+    res.json({ status: 'success', message: 'Character deleted' });
   } catch (error) {
     res.status(500).json({ status: 'error', message: error.message });
   }
@@ -139,9 +191,10 @@ app.get('*', (req, res) => {
 
 // Start the server
 const PORT = process.env.WEB_PORT || 8080;
-server.listen(PORT, async () => {
-  console.log(`Web server listening on port ${PORT}`);
-  await initializeSystem();
+initializeSystem().then(() => {
+  server.listen(PORT, () => {
+    console.log(`Web server listening on port ${PORT}`);
+  });
 });
 
 // Handle graceful shutdown

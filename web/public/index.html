@@ -464,7 +464,7 @@
     <div class="terminal-nav">
       <button class="terminal-nav-item active" data-tab="conversations">CONVERSATIONS</button>
       <button class="terminal-nav-item" data-tab="new-conversation">NEW CONVERSATION</button>
-      <button class="terminal-nav-item" data-tab="templates">TEMPLATES</button>
+      <button class="terminal-nav-item" data-tab="characters">CHARACTERS</button>
       <button class="terminal-nav-item" data-tab="export">EXPORT</button>
     </div>
     
@@ -504,14 +504,6 @@
           </div>
           
           <div class="form-group">
-            <label for="template" class="form-label">TEMPLATE (OPTIONAL):</label>
-            <select class="form-control terminal-select" id="template">
-              <option value="">No template</option>
-              <!-- Templates will be loaded here -->
-            </select>
-          </div>
-          
-          <div class="form-group">
             <label for="num-turns" class="form-label">NUMBER OF TURNS:</label>
             <input type="number" class="form-control" id="num-turns" value="6" min="2" max="20">
           </div>
@@ -527,14 +519,47 @@
         </form>
       </div>
       
-      <!-- Templates Tab -->
-      <div id="templates" class="tab-content">
-        <h2>CONVERSATION TEMPLATES</h2>
-        
-        <div id="templates-list">
-          <div class="loading-container">
-            <div class="loading"></div>
+      <!-- Characters Tab -->
+      <div id="characters" class="tab-content">
+        <div class="terminal-header">
+          <h2>CHARACTERS</h2>
+          <button class="terminal-btn" id="new-character-btn">+ NEW CHARACTER</button>
+        </div>
+
+        <!-- Character editor (hidden by default) -->
+        <div id="character-editor" style="display:none; margin-bottom:20px;">
+          <h3 id="character-editor-title">NEW CHARACTER</h3>
+          <div class="form-group">
+            <label class="form-label">ID (filename):</label>
+            <input type="text" class="form-control" id="char-id" placeholder="e.g. historian">
           </div>
+          <div class="form-group">
+            <label class="form-label">NAME:</label>
+            <input type="text" class="form-control" id="char-name" placeholder="Display name">
+          </div>
+          <div class="form-group">
+            <label class="form-label">SYSTEM PROMPT:</label>
+            <textarea class="form-control" id="char-prompt" rows="6" placeholder="Describe this character's personality and role..."></textarea>
+          </div>
+          <div class="form-group">
+            <label class="form-label">REASONING EFFORT:</label>
+            <select class="form-control terminal-select" id="char-reasoning-effort">
+              <option value="">— not set (default) —</option>
+              <option value="low">low</option>
+              <option value="medium">medium</option>
+              <option value="high">high</option>
+            </select>
+            <small style="color:#0f0;opacity:0.7;">Only reasoningEffort is supported by the Copilot provider.</small>
+          </div>
+          <div style="display:flex;gap:10px;">
+            <button class="terminal-btn" id="char-save-btn">SAVE</button>
+            <button class="terminal-btn" id="char-cancel-btn" style="opacity:0.6;">CANCEL</button>
+          </div>
+          <p id="char-message" style="margin-top:8px;"></p>
+        </div>
+
+        <div id="characters-list">
+          <div class="loading-container"><div class="loading"></div></div>
         </div>
       </div>
       
@@ -584,8 +609,6 @@
     const backBtn = document.getElementById('back-btn');
     const newConversationForm = document.getElementById('new-conversation-form');
     const newConversationMessage = document.getElementById('new-conversation-message');
-    const templatesListContainer = document.getElementById('templates-list');
-    const templateSelect = document.getElementById('template');
     const exportConversationSelect = document.getElementById('export-conversation');
     const exportFormatSelect = document.getElementById('export-format');
     const exportBtn = document.getElementById('export-btn');
@@ -633,8 +656,8 @@
             html += '</ul>';
             conversationsContainer.innerHTML = html;
             
-            // Add event listeners to conversation items
-            document.querySelectorAll('.conversation-item').forEach(item => {
+            // Add event listeners to conversation items (exclude template items)
+            document.querySelectorAll('.conversation-item:not(.template-item)').forEach(item => {
               item.addEventListener('click', () => {
                 const conversationId = item.dataset.id;
                 viewConversation(conversationId);
@@ -673,11 +696,17 @@
       
       // Fetch conversation data
       fetch(`/api/conversations/${conversationId}`)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+          }
+          return response.json();
+        })
         .then(conversation => {
           let html = '';
+          const turns = Array.isArray(conversation) ? conversation : [];
           
-          conversation.forEach(turn => {
+          turns.forEach(turn => {
             html += `
               <div class="turn">
                 <div class="turn-header">TURN ${turn.turn}: ${turn.llmId}</div>
@@ -708,43 +737,117 @@
         });
     }
     
-    // Load templates
-    function loadTemplates() {
-      templatesListContainer.innerHTML = `
-        <div class="loading-container">
-          <div class="loading"></div>
-        </div>
-      `;
-      
-      fetch('/api/templates')
+    // Load characters
+    function loadCharacters() {
+      const container = document.getElementById('characters-list');
+      container.innerHTML = '<div class="loading-container"><div class="loading"></div></div>';
+
+      fetch('/api/characters')
         .then(response => response.json())
-        .then(templates => {
-          if (templates && templates.length > 0) {
-            let listHtml = '<ul class="conversation-list">';
-            let selectHtml = '<option value="">No template</option>';
-            
-            templates.forEach(template => {
-              listHtml += `
-                <li class="conversation-item template-item" data-id="${template.id}">
-                  <div class="conversation-title">${template.name}</div>
-                  <div class="conversation-meta">${template.description}</div>
-                </li>
-              `;
-              
-              selectHtml += `<option value="${template.id}">${template.name}</option>`;
+        .then(characters => {
+          if (characters && characters.length > 0) {
+            let html = '<ul class="conversation-list">';
+            characters.forEach(c => {
+              html += `
+                <li class="conversation-item" style="display:flex;justify-content:space-between;align-items:center;" data-id="${c.id}">
+                  <div>
+                    <div class="conversation-title">${c.name || c.id}</div>
+                    <div class="conversation-meta">${(c.systemPrompt || '').substring(0, 80)}${(c.systemPrompt || '').length > 80 ? '…' : ''}</div>
+                  </div>
+                  <div style="display:flex;gap:6px;flex-shrink:0;">
+                    <button class="terminal-btn char-edit-btn" data-id="${c.id}" style="padding:4px 10px;font-size:11px;">EDIT</button>
+                    <button class="terminal-btn char-delete-btn" data-id="${c.id}" style="padding:4px 10px;font-size:11px;opacity:0.6;">DEL</button>
+                  </div>
+                </li>`;
             });
-            
-            listHtml += '</ul>';
-            templatesListContainer.innerHTML = listHtml;
-            templateSelect.innerHTML = selectHtml;
+            html += '</ul>';
+            container.innerHTML = html;
+
+            document.querySelectorAll('.char-edit-btn').forEach(btn => {
+              btn.addEventListener('click', e => { e.stopPropagation(); openCharacterEditor(btn.dataset.id); });
+            });
+            document.querySelectorAll('.char-delete-btn').forEach(btn => {
+              btn.addEventListener('click', e => { e.stopPropagation(); deleteCharacter(btn.dataset.id); });
+            });
           } else {
-            templatesListContainer.innerHTML = '<p>No templates available</p>';
+            container.innerHTML = '<p>No characters yet. Click + NEW CHARACTER to create one.</p>';
           }
         })
         .catch(error => {
-          console.error('Error loading templates:', error);
-          templatesListContainer.innerHTML = '<p class="error-message">Error loading templates</p>';
+          console.error('Error loading characters:', error);
+          container.innerHTML = '<p class="error-message">Error loading characters</p>';
         });
+    }
+
+    // Open character editor (id = undefined → new character)
+    function openCharacterEditor(id) {
+      const editor = document.getElementById('character-editor');
+      const title  = document.getElementById('character-editor-title');
+      const idInput = document.getElementById('char-id');
+      document.getElementById('char-message').textContent = '';
+
+      if (id) {
+        title.textContent = 'EDIT CHARACTER';
+        idInput.value = id;
+        idInput.readOnly = true;
+        fetch(`/api/characters/${id}`)
+          .then(r => r.json())
+          .then(c => {
+            document.getElementById('char-name').value = c.name || '';
+            document.getElementById('char-prompt').value = c.systemPrompt || '';
+            const p = c.parameters || {};
+            document.getElementById('char-reasoning-effort').value = p.reasoningEffort || '';
+          });
+      } else {
+        title.textContent = 'NEW CHARACTER';
+        idInput.value = '';
+        idInput.readOnly = false;
+        ['char-name','char-prompt'].forEach(f => { document.getElementById(f).value = ''; });
+        document.getElementById('char-reasoning-effort').value = '';
+      }
+      editor.style.display = 'block';
+      editor.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function saveCharacter() {
+      const id = document.getElementById('char-id').value.trim();
+      const name = document.getElementById('char-name').value.trim();
+      const systemPrompt = document.getElementById('char-prompt').value.trim();
+      const msg = document.getElementById('char-message');
+
+      if (!id || !name) { msg.textContent = 'ID and Name are required.'; return; }
+
+      const params = {};
+      const reasoningEffort = document.getElementById('char-reasoning-effort').value;
+      if (reasoningEffort) params.reasoningEffort = reasoningEffort;
+
+      const character = { id, name, systemPrompt, parameters: params };
+      const isEdit = document.getElementById('char-id').readOnly;
+      const method = isEdit ? 'PUT' : 'POST';
+      const url = isEdit ? `/api/characters/${id}` : '/api/characters';
+
+      fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(character) })
+        .then(r => r.json())
+        .then(result => {
+          if (result.status === 'success') {
+            msg.style.color = '#0f0';
+            msg.textContent = isEdit ? 'Character updated.' : 'Character created.';
+            document.getElementById('character-editor').style.display = 'none';
+            loadCharacters();
+          } else {
+            msg.style.color = '#f00';
+            msg.textContent = result.message;
+          }
+        })
+        .catch(() => { msg.style.color = '#f00'; msg.textContent = 'Save failed.'; });
+    }
+
+    function deleteCharacter(id) {
+      if (!confirm(`Delete character "${id}"?`)) return;
+      fetch(`/api/characters/${id}`, { method: 'DELETE' })
+        .then(r => r.json())
+        .then(() => loadCharacters())
+        .catch(err => console.error('Delete character failed:', err));
     }
     
     // Export conversation
@@ -847,6 +950,12 @@
     exportBtn.addEventListener('click', exportConversation);
     exportConversationSelect.addEventListener('change', exportConversation);
     exportFormatSelect.addEventListener('change', exportConversation);
+
+    document.getElementById('new-character-btn').addEventListener('click', () => openCharacterEditor(undefined));
+    document.getElementById('char-save-btn').addEventListener('click', saveCharacter);
+    document.getElementById('char-cancel-btn').addEventListener('click', () => {
+      document.getElementById('character-editor').style.display = 'none';
+    });
     
     // Socket.IO events
     socket.on('connect', () => {
@@ -864,7 +973,7 @@
     // Initialize
     document.addEventListener('DOMContentLoaded', () => {
       loadConversations();
-      loadTemplates();
+      loadCharacters();
     });
     
     // Terminal typing effect for the title

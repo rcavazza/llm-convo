@@ -1,5 +1,6 @@
 const OpenAIProvider = require('./openai-provider');
 const AnthropicProvider = require('./anthropic-provider');
+const CopilotProvider = require('./copilot-provider');
 
 /**
  * Factory for creating LLM providers
@@ -11,7 +12,8 @@ class ProviderFactory {
   constructor() {
     this.providerClasses = {
       'openai': OpenAIProvider,
-      'anthropic': AnthropicProvider
+      'anthropic': AnthropicProvider,
+      'copilot': CopilotProvider
     };
   }
 

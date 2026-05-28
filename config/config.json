@@ -2,14 +2,14 @@
   "llmProviders": [
     {
       "id": "philosopher",
-      "provider": "anthropic",
-      "model": "claude-3-7-sonnet-20250219",
+      "provider": "copilot",
+      "model": "gpt-4.1",
       "characterDefinition": "philosopher.json"
     },
     {
       "id": "scientist",
-      "provider": "anthropic",
-      "model": "claude-3-7-sonnet-20250219",
+      "provider": "copilot",
+      "model": "gpt-4.1",
       "characterDefinition": "scientist.json"
     }
   ],
@@ -26,7 +26,7 @@
     "displayInConsole": true,
     "api": {
       "enabled": true,
-      "port": 3000
+      "port": 3001
     },
     "web": {
       "enabled": true,
@@ -48,6 +48,6 @@
     "strategy": "retry",
     "maxRetries": 3,
     "initialDelay": 1000,
-    "fallbackProvider": "openai"
+    "fallbackProvider": "copilot"
   }
 }

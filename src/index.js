@@ -11,7 +11,6 @@ const ConversationManager = require('./conversation-manager');
 const OutputManager = require('./output-manager');
 const ConversationRepository = require('./conversation-repository');
 const ErrorHandler = require('./error-handler');
-const TemplateManager = require('./template-manager');
 const ExportManager = require('./export-manager');
 
 /**
@@ -25,12 +24,10 @@ class ConversationSystem {
   constructor(configPath) {
     this.configPath = configPath || path.join(__dirname, '../config/config.json');
     this.configManager = new ConfigurationManager(this.configPath);
-    this.templatesDir = path.join(path.dirname(this.configPath), 'templates');
     this.conversationManager = null;
     this.outputManager = null;
     this.conversationRepository = null;
     this.errorHandler = null;
-    this.templateManager = null;
     this.exportManager = null;
   }
 
@@ -53,15 +50,8 @@ class ConversationSystem {
       this.outputManager = new OutputManager(config.output);
       this.conversationRepository = new ConversationRepository(this.outputManager);
       this.errorHandler = new ErrorHandler(config.errorHandling);
-      this.templateManager = new TemplateManager(this.templatesDir);
       this.exportManager = new ExportManager();
-      
-      // Load template if specified in config
-      if (config.conversation.template) {
-        console.log(`Loading template: ${config.conversation.template}`);
-        await this.templateManager.loadTemplate(config.conversation.template);
-      }
-      
+
       // Setup API if enabled
       if (config.output.api && config.output.api.enabled) {
         this.setupAPI();
@@ -92,16 +82,6 @@ class ConversationSystem {
       }
       
       // Apply template if specified
-      if (config.conversation.template) {
-        const template = await this.templateManager.loadTemplate(config.conversation.template);
-        const appliedTemplate = this.templateManager.applyTemplate(template, config.conversation.topic);
-        
-        console.log(`Applied template: ${template.name}`);
-        
-        // TODO: Implement template-based conversation flow
-        // For now, we'll just use the regular conversation flow
-      }
-      
       // Start the conversation
       const conversation = await this.conversationManager.startConversation();
       
@@ -199,25 +179,6 @@ class ConversationSystem {
         }
       } catch (error) {
         res.status(500).json({ status: 'error', message: error.message });
-      }
-    });
-    
-    // Add template endpoints
-    app.get('/templates', async (req, res) => {
-      try {
-        const templates = await this.templateManager.listTemplates();
-        res.json(templates);
-      } catch (error) {
-        res.status(500).json({ status: 'error', message: error.message });
-      }
-    });
-    
-    app.get('/templates/:id', async (req, res) => {
-      try {
-        const template = await this.templateManager.loadTemplate(req.params.id);
-        res.json(template);
-      } catch (error) {
-        res.status(404).json({ status: 'error', message: error.message });
       }
     });
     

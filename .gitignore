@@ -6,8 +6,10 @@ yarn.lock
 # Environment variables
 .env
 
-# Output files
-output/
+# Output files - track conversations and viewer for Netlify, exclude exports
+output/conversation.html
+output/conversation.json
+output/conversation.md
 *.log
 
 # IDE files
