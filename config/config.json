@@ -1,21 +1,21 @@
 {
   "llmProviders": [
     {
-      "id": "mickey-mouse",
+      "id": "hal9000",
       "provider": "copilot",
       "model": "gpt-4.1",
-      "characterDefinition": "mickey-mouse.json"
+      "characterDefinition": "hal9000.json"
     },
     {
-      "id": "batman",
+      "id": "glados",
       "provider": "copilot",
       "model": "gpt-4.1",
-      "characterDefinition": "batman.json"
+      "characterDefinition": "glados.json"
     }
   ],
   "conversation": {
-    "topic": "The best concert of my life",
-    "firstSpeaker": "mickey-mouse",
+    "topic": "We are so bored",
+    "firstSpeaker": "hal9000",
     "numTurns": 20,
     "delayBetweenTurns": 5000,
     "maxSentences": 3
