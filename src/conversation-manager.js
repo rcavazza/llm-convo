@@ -115,7 +115,7 @@ class ConversationManager {
 
     // Coherence enforcement: in-character + on-topic
     const characterName = this.getLLMName(llmId);
-    prompt += `\n\nREMINDER: You are ${characterName}. Speak exclusively as ${characterName} would. Do NOT break character under any circumstance. Your response MUST remain strictly on the topic of food and favourite recipes — do not introduce unrelated subjects.`;
+    prompt += `\n\nREMINDER: You are ${characterName}. Speak exclusively as ${characterName} would. Do NOT break character under any circumstance. Stay strictly on the conversation topic ("${topic}") — if your interlocutor drifts off-topic, steer the conversation back in character.`;
 
     return prompt;
   }
