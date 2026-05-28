@@ -62,6 +62,9 @@ class OutputManager {
     // Write to file
     await fs.writeFile(outputPath, formattedConversation, 'utf8');
     
+    // Sync character files to output/characters/
+    await this.syncCharacters(conversation);
+    
     // Update the index
     await this.updateIndex(conversation, outputPath);
     
@@ -75,6 +78,20 @@ class OutputManager {
    * @param {string} filePath - The path where the conversation was saved
    * @returns {Promise<void>}
    */
+  async syncCharacters(conversation) {
+    const participants = this.extractParticipants(conversation);
+    const srcDir = path.join(process.cwd(), 'config', 'characters');
+    const destDir = path.join(process.cwd(), 'output', 'characters');
+    await fs.ensureDir(destDir);
+    for (const id of participants) {
+      const src = path.join(srcDir, `${id}.json`);
+      const dest = path.join(destDir, `${id}.json`);
+      if (await fs.pathExists(src)) {
+        await fs.copy(src, dest, { overwrite: true });
+      }
+    }
+  }
+
   async updateIndex(conversation, filePath) {
     // Create metadata for the conversation
     const metadata = {
