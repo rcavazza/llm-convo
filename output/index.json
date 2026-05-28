@@ -11,14 +11,36 @@
     "timestamp": "2025-03-27T21:08:16.892Z"
   },
   {
-    "id": "2026-05-28T15-11-03_the-ethical-implications-of-ar",
-    "filename": "2026-05-28T15-11-03_the-ethical-implications-of-ar.json",
-    "topic": "The ethical implications of artificial intelligence",
+    "id": "2026-05-28T19-52-41_design-patterns-applied-to-lif",
+    "filename": "2026-05-28T19-52-41_design-patterns-applied-to-lif.json",
+    "topic": "Design patterns applied to life",
     "participants": [
       "philosopher",
       "scientist"
     ],
-    "turns": 6,
-    "timestamp": "2026-05-28T15:11:03.138Z"
+    "turns": 10,
+    "timestamp": "2026-05-28T19:52:41.883Z"
+  },
+  {
+    "id": "2026-05-28T20-17-02_your-favourite-recipes-and-coo",
+    "filename": "2026-05-28T20-17-02_your-favourite-recipes-and-coo.json",
+    "topic": "Your favourite recipes and cooking experiences",
+    "participants": [
+      "madre-teresa",
+      "marx"
+    ],
+    "turns": 20,
+    "timestamp": "2026-05-28T20:17:02.517Z"
+  },
+  {
+    "id": "2026-05-28T20-24-17_the-best-concert-of-my-life",
+    "filename": "2026-05-28T20-24-17_the-best-concert-of-my-life.json",
+    "topic": "The best concert of my life",
+    "participants": [
+      "mickey-mouse",
+      "batman"
+    ],
+    "turns": 20,
+    "timestamp": "2026-05-28T20:24:17.500Z"
   }
 ]

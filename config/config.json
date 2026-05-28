@@ -1,23 +1,24 @@
 {
   "llmProviders": [
     {
-      "id": "philosopher",
+      "id": "mickey-mouse",
       "provider": "copilot",
       "model": "gpt-4.1",
-      "characterDefinition": "philosopher.json"
+      "characterDefinition": "mickey-mouse.json"
     },
     {
-      "id": "scientist",
+      "id": "batman",
       "provider": "copilot",
       "model": "gpt-4.1",
-      "characterDefinition": "scientist.json"
+      "characterDefinition": "batman.json"
     }
   ],
   "conversation": {
-    "topic": "The ethical implications of artificial intelligence",
-    "firstSpeaker": "philosopher",
-    "numTurns": 6,
-    "delayBetweenTurns": 5000
+    "topic": "The best concert of my life",
+    "firstSpeaker": "mickey-mouse",
+    "numTurns": 20,
+    "delayBetweenTurns": 5000,
+    "maxSentences": 3
   },
   "output": {
     "saveToFile": true,

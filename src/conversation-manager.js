@@ -103,11 +103,20 @@ class ConversationManager {
     const otherSpeakerName = this.getLLMName(otherSpeakerId);
     
     if (conversationHistory.length === 0) {
-      prompt += `You are starting the conversation on the topic "${topic}". Introduce your perspective on this topic.`;
+      prompt += `You are starting the conversation on the topic "${topic}". Introduce your perspective on this topic, staying fully in character.`;
     } else {
       prompt += `Continue the conversation by responding to ${otherSpeakerName}'s last message.`;
     }
-    
+
+    const maxSentences = this.config.conversation.maxSentences;
+    if (maxSentences) {
+      prompt += ` Keep your response to ${maxSentences} sentences maximum.`;
+    }
+
+    // Coherence enforcement: in-character + on-topic
+    const characterName = this.getLLMName(llmId);
+    prompt += `\n\nREMINDER: You are ${characterName}. Speak exclusively as ${characterName} would. Do NOT break character under any circumstance. Your response MUST remain strictly on the topic of food and favourite recipes — do not introduce unrelated subjects.`;
+
     return prompt;
   }
 
